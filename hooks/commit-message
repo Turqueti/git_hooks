@@ -1,0 +1,97 @@
+#!/usr/bin/python3
+import sys
+
+err_msg = "oops... something went wrong with your commit message"
+valid_prefixes = [
+    'build',
+    'ci',
+    'docs',
+    'feat',
+    'fix',
+    'perf',
+    'refactor',
+    'style',
+    'test'
+]
+
+
+def conventional_commit_header(line):
+    """
+    Asserts that the header of the commit message follows 
+    the conventional commits especifications
+
+    args:
+        line: header line content as str
+    return:
+        Bool value
+    """
+    
+
+    if ": " not in line:
+        return False
+    header = line.split(": ")
+
+    type_scope = header[0]
+    subject = header[1]
+
+    if "(" in type_scope:
+        type = type_scope.split('(')[0]
+        scope = type_scope.split('(')[1][0:-1]
+    else:
+        type = type_scope
+    
+    if not type in valid_prefixes:
+        print("invalid commit type")
+        return False
+
+    return True
+
+
+def main():
+    with open(sys.argv[1],"r") as filePointer:
+        lines = filePointer.readlines()
+        for idx, line in enumerate(lines):
+            if line.strip() == "# ------------------------ >8 ------------------------":
+                break
+            if line[0] == "#":
+                continue
+            
+            if not line_valid(idx,line):
+                print(err_msg)
+                sys.exit(1)
+
+    sys.exit(0)
+
+def line_valid(idx,line):
+    """
+    Implements conventional commit validation according to the following the rules:
+    # There must be a header line and it must not be longer than 50 characters
+    # The header must be composed of a type and a scope separateded by ": "
+    # The commit message could have a body that must be separated from the header with a blank line
+    # Lines in commit body must not have more than 72 characters
+    # The type of the commit must be a valid type acording to the angular convention
+
+        args:
+            idx: line index
+            line: line content
+        return:
+            this function expect a True/False return
+    """
+    if idx == 0:
+        if len(line) > 50:
+            print("header line %d characters too long" % (len(line) - 50))
+            return False
+        return conventional_commit_header(line)
+    if idx == 1:
+        if not len(line.strip()) == 0:
+            print("the line beneath the header must be blank")
+            return False
+    else:
+        if len(line.strip()) > 72:
+            print("line %d is %d characters too long" % (idx,(len(line.strip()) - 72)))
+            return False
+
+    return True
+
+if __name__ == "__main__":
+    main()
